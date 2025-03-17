@@ -4,6 +4,10 @@ import pickle
 import random
 import gym
 
+from q_learning_agent import QLearningAgent
+
+policy = QLearningAgent(None, 0, 0, 'taxi-q-learning-agent.pkl')
+
 def get_action(obs):
     
     # TODO: Train your own agent
@@ -11,8 +15,6 @@ def get_action(obs):
     # NOTE: Keep in mind that your Q-table may not cover all possible states in the testing environment.
     #       To prevent crashes, implement a fallback strategy for missing keys. 
     #       Otherwise, even if your agent performs well in training, it may fail during testing.
-
-
-    return random.choice([0, 1, 2, 3, 4, 5]) # Choose a random action
-    # You can submit this random agent to evaluate the performance of a purely random strategy.
-
+    state = policy.get_state(obs)
+    action = policy.predict_action(state, 0)
+    return action
