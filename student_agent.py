@@ -7,6 +7,7 @@ import gym
 from dqn_agent import DQNAgent
 
 policy = DQNAgent(0, 0, 0, 'taxi-dqn-agent.pt')
+policy.to('cpu')
 
 def get_action(obs):
     
@@ -17,5 +18,5 @@ def get_action(obs):
     #       Otherwise, even if your agent performs well in training, it may fail during testing.   
     # print(obs)
     observation = policy.get_observation(obs)
-    action = policy.predict_action(observation, 0.0)
+    action = policy.predict_action(observation, 0.0, 'cpu')
     return action

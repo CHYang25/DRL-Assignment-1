@@ -100,10 +100,10 @@ class DQNAgent:
         obs_tensor = torch.cat((stage_tensor, diff_x_tensor, diff_y_tensor, obstacle_tensor), dim=0)
         return obs_tensor
 
-    def predict_action(self, obs, epislon):
+    def predict_action(self, obs, epislon, device='cuda'):
         if np.random.uniform(0, 1) > epislon:
             with torch.no_grad():
-                q_values = self.q_network(obs.unsqueeze(dim=0).to('cuda'))
+                q_values = self.q_network(obs.unsqueeze(dim=0).to(device))
                 action = torch.argmax(q_values).item()
         else:
             action = random.choice(list(range(6)))
@@ -148,3 +148,7 @@ class DQNAgent:
     def load_checkpoint(self, checkpoint='taxi-q-learning-agent.pkl'):
         q_network_state_dict = torch.load(open(checkpoint, 'rb'))
         self.q_network.load_state_dict(q_network_state_dict)
+
+    def to(self, device):
+        self.q_network.to(device)
+        self.q_target_network.to(device)
