@@ -6,11 +6,14 @@ class QLearningAgent:
     def __init__(self, env, alpha, gamma, ckpt_name=None):
         self.q_table = np.zeros(
             (
-                5, # taxi row
-                5, # taxi col
-                5, # passenger location
-                4, # destination
-                6, # action
+                2,      # stage: go to passenger, go to goal
+                19,     # diff_x: (10-1)*2 + 1
+                19,     # diff_y: (10-1)*2 + 1
+                2,      # obstacle north
+                2,      # obstacle south
+                2,      # obstacle east
+                2,      # obstacle west
+                6,      # actions
             )
         )
         self.alpha = alpha

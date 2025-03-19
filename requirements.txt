@@ -2,3 +2,6 @@ tqdm
 requests
 argparse
 torch
+gym-minigrid
+imageio
+click
