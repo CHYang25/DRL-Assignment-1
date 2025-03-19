@@ -144,7 +144,7 @@ class DQNAgent:
         torch.save(self.q_network.state_dict(), open(checkpoint, 'ab'))
 
     def load_checkpoint(self, checkpoint='taxi-q-learning-agent.pkl'):
-        q_network_state_dict = torch.load(open(checkpoint, 'rb'))
+        q_network_state_dict = torch.load(open(checkpoint, 'rb'), map_location=torch.device('cpu'))
         self.q_network.load_state_dict(q_network_state_dict)
 
     def to(self, device):
