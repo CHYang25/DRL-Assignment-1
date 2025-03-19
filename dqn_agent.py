@@ -41,8 +41,6 @@ class DQNAgent:
         self.action_dim = sum(self.action_space)
         self.q_network = QNetwork(obs_dim=self.obs_dim, action_dim=self.action_dim)
         self.q_target_network = QNetwork(obs_dim=self.obs_dim, action_dim=self.action_dim)
-        self.q_network.to('cuda')
-        self.q_target_network.to('cuda')
 
         self.gamma = gamma
         self.tau = tau

@@ -71,6 +71,7 @@ def train_dqn(
     
     # agent_x, agent_y, direction, key possession, door status, actions
     policy = DQNAgent(gamma=gamma, tau=tau, lr=lr, checkpoint=None)
+    policy.to('cuda')
     manager = TrainingManager(episodes=episodes)
     buffer = ReplayBuffer()
 
