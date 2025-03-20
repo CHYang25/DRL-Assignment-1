@@ -11,6 +11,9 @@ from dynamic_taxi_env import DynamicTaxiEnv
 from collections import deque
 import click
 
+import wandb
+from datetime import datetime
+
 class TrainingManager:
 
     def __init__(self, episodes):
@@ -26,7 +29,7 @@ class TrainingManager:
 
     def print_status(self, epsilon, last_n_episodes=100):
         avg_reward = np.mean(self.rewards_per_episode[-last_n_episodes:])
-        print(f"🚀 Episode {self.episode_cnt + 1}/{self.episodes}, Average Reward: {avg_reward:.2f}, Epsilon: {epsilon:.3f}")
+        print(f"🚀 Episode {self.episode_cnt}/{self.episodes}, Average Reward: {avg_reward:.2f}, Epsilon: {epsilon:.3f}")
 
 class ReplayBuffer:
     
@@ -63,22 +66,44 @@ class ReplayBuffer:
         }
         return batch
 
+@click.command()
+@click.option('-n', '--num_episodes', default=10000)
+@click.option('-l', '--lr', default=1e-4)
+@click.option('-g', '--gamma', default=0.99)
+@click.option('-t', '--tau', default=0.005)
+@click.option('--epsilon_start', default=1.0)
+@click.option('--epsilon_end', default=0.05)
+@click.option('--decay_rate', default=0.9995)
+@click.option('--batch_size', default=256)
+@click.option('--buffer_size', default=50000)
 def train_dqn(
-        episodes=10, lr=1e-4, gamma=0.99, tau=0.005,
-        epsilon_start=1.0, epsilon_end=0.01, 
-        decay_rate=0.9999, batch_size=256
+        num_episodes, lr, gamma, tau,
+        epsilon_start, epsilon_end, 
+        decay_rate, batch_size, buffer_size
     ):
-    
+
+    wandb_run = wandb.init(
+        dir='./output/',
+        project='drl_hw1',
+        mode="online",
+        name=datetime.now().strftime("%Y.%m.%d-%H.%M.%S"),
+    )
+    wandb.config.update(
+        {
+            "output_dir": './output/',
+        }
+    )
+
     # agent_x, agent_y, direction, key possession, door status, actions
     policy = DQNAgent(gamma=gamma, tau=tau, lr=lr, checkpoint=None)
     policy.to('cuda')
-    manager = TrainingManager(episodes=episodes)
-    buffer = ReplayBuffer()
+    manager = TrainingManager(episodes=num_episodes)
+    buffer = ReplayBuffer(buffer_size=buffer_size)
 
     epsilon = epsilon_start
 
-    for episode in range(episodes):
-        env = DynamicTaxiEnv(grid_size=random.choice(list(range(5, 11))))
+    for episode in range(num_episodes):
+        env = DynamicTaxiEnv(grid_size=random.randint(5, 10), fuel_limit=500)
         obs, _ = env.reset()
         policy.reset()
 
@@ -87,6 +112,7 @@ def train_dqn(
         done = False
         total_reward = 0
         episode_step = 0
+        update_log=None
 
         while not done:
             # TODO: Implement ε-greedy policy for action selection.
@@ -107,7 +133,7 @@ def train_dqn(
             # TODO: Apply Q-learning update rule (Bellman equation).
             if len(buffer) >= batch_size:
                 batch = buffer.sample(batch_size)
-                policy.update(batch)
+                update_log = policy.update(batch)
 
             # Move to the next state.
             observation = next_observation
@@ -115,8 +141,15 @@ def train_dqn(
         manager.add_episode(total_reward=total_reward, episode_step=episode_step)
         epsilon = max(epsilon_end, epsilon * decay_rate)
 
-        if (episode + 1) % 10 == 0:
-            manager.print_status(epsilon=epsilon)
+        wandb_run.log({
+            'epsilon': epsilon,
+            'total_reward': total_reward,
+            'loss': update_log['loss'] if update_log is not None else 0.0,
+            'episode_steps': episode_step,
+            'episode': episode
+        })
+
+        manager.print_status(epsilon=epsilon)
 
     policy.save_checkpoint()
     
