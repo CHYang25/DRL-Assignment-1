@@ -6,7 +6,7 @@ import gym
 
 from dqn_agent import DQNAgent
 
-policy = DQNAgent(0, 0, 0, 'taxi-dqn-agent-1.pt')
+policy = DQNAgent(0, 0, 0, 'taxi-dqn-agent-2.pt')
 policy.to('cpu')
 
 def get_action(obs):
