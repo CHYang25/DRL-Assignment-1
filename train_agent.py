@@ -27,9 +27,9 @@ class TrainingManager:
         self.episode_len.append(episode_step)
         self.episode_cnt += 1
 
-    def print_status(self, epsilon, last_n_episodes=100):
+    def print_status(self, epsilon, obstacle_ratio, last_n_episodes=100):
         avg_reward = np.mean(self.rewards_per_episode[-last_n_episodes:])
-        print(f"🚀 Episode {self.episode_cnt}/{self.episodes}, Average Reward: {avg_reward:.2f}, Epsilon: {epsilon:.3f}")
+        print(f"🚀 Episode {self.episode_cnt}/{self.episodes}, Average Reward: {avg_reward:.2f}, Epsilon: {epsilon:.3f}, Obstacle Ratio: {obstacle_ratio:.3f}")
 
 class ReplayBuffer:
     
@@ -68,7 +68,7 @@ class ReplayBuffer:
 
 @click.command()
 @click.option('-n', '--num_episodes', default=10000)
-@click.option('-l', '--lr', default=1e-4)
+@click.option('-l', '--lr', default=5e-4)
 @click.option('-g', '--gamma', default=0.99)
 @click.option('-t', '--tau', default=0.005)
 @click.option('--epsilon_start', default=1.0)
@@ -76,10 +76,11 @@ class ReplayBuffer:
 @click.option('--decay_rate', default=0.9995)
 @click.option('--batch_size', default=256)
 @click.option('--buffer_size', default=50000)
+@click.option('--max_obstacle_ratio', default=0.4)
 def train_dqn(
         num_episodes, lr, gamma, tau,
         epsilon_start, epsilon_end, 
-        decay_rate, batch_size, buffer_size
+        decay_rate, batch_size, buffer_size, max_obstacle_ratio
     ):
 
     wandb_run = wandb.init(
@@ -100,10 +101,11 @@ def train_dqn(
     manager = TrainingManager(episodes=num_episodes)
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
+    obstacle_ratio = 0.0
     epsilon = epsilon_start
 
     for episode in range(num_episodes):
-        env = DynamicTaxiEnv(grid_size=random.randint(5, 10), fuel_limit=500)
+        env = DynamicTaxiEnv(grid_size=random.randint(5, 10), fuel_limit=500, obstacle_ratio=obstacle_ratio)
         obs, _ = env.reset()
         policy.reset()
 
@@ -140,16 +142,18 @@ def train_dqn(
 
         manager.add_episode(total_reward=total_reward, episode_step=episode_step)
         epsilon = max(epsilon_end, epsilon * decay_rate)
+        obstacle_ratio += max_obstacle_ratio / num_episodes
 
         wandb_run.log({
             'epsilon': epsilon,
             'total_reward': total_reward,
             'loss': update_log['loss'] if update_log is not None else 0.0,
             'episode_steps': episode_step,
-            'episode': episode
+            'episode': episode,
+            'obstacle_ratio': obstacle_ratio,
         })
 
-        manager.print_status(epsilon=epsilon)
+        manager.print_status(epsilon=epsilon, obstacle_ratio=obstacle_ratio)
 
     policy.save_checkpoint()
     

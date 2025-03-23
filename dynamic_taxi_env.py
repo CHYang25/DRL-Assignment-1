@@ -9,7 +9,7 @@ from simple_custom_taxi_env import SimpleTaxiEnv
 from collections import deque
 
 class DynamicTaxiEnv(SimpleTaxiEnv):
-    def __init__(self, grid_size=5, fuel_limit=50):
+    def __init__(self, grid_size=5, fuel_limit=50, obstacle_ratio=0.0):
         """
         Custom Taxi environment supporting different grid sizes.
         """
@@ -23,7 +23,7 @@ class DynamicTaxiEnv(SimpleTaxiEnv):
         
         # Generate random obstacles ensuring station accessibility
         potential_obstacles = [(x, y) for x in range(grid_size) for y in range(grid_size) if (x, y) not in self.stations]
-        num_obstacles = random.randint(0, int(len(potential_obstacles) * 0.5))  # Random number of obstacles
+        num_obstacles = int(len(potential_obstacles) * obstacle_ratio) # Random number of obstacles
         
         while True:
             self.obstacles = set(random.sample(potential_obstacles, num_obstacles))

@@ -153,7 +153,7 @@ class DQNAgent:
         loss = self.loss_fn(state_action_values, expected_state_action_values)
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=0.5)
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=1.0)
         self.optimizer.step()
 
         q_target_network_state_dict = self.q_target_network.state_dict()
